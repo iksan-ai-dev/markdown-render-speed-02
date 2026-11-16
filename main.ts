@@ -1,23 +1,20 @@
-// Entry point for the markdown-render-speed-02 bounty.
-// Run as: node /bot/main.ts
-// Reads /input/cases.json (an array of {id, markdown} objects, or an
-// object with a "cases" array) and writes /output/html.json as a JSON
-// array of HTML strings, one per case and in the same order, using
-// parse() from ./parse.js. Node 22 standard library only; no dependencies.
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+// Harness driver for markdown-render-speed-02.
+// Reads the cases from MAKEFUN_INPUT_DIR/cases.json (default /input), renders
+// each markdown string with parse() from ./parse.js, and writes the HTML strings
+// as a JSON array to MAKEFUN_OUTPUT_DIR/html.json (default /output).
+// Runs under Node 22 type stripping, so this file uses erasable syntax only.
+
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { parse } from './parse.js';
 
-const INPUT = '/input/cases.json';
-const OUTPUT = '/output/html.json';
+const inputDir = process.env.MAKEFUN_INPUT_DIR || '/input';
+const outputDir = process.env.MAKEFUN_OUTPUT_DIR || '/output';
 
-const raw = readFileSync(INPUT, 'utf8');
-const data = JSON.parse(raw);
-const cases = Array.isArray(data) ? data : data.cases;
-
-const out = [];
-for (const c of cases) {
-  out.push(parse(c.markdown));
+const cases = JSON.parse(readFileSync(join(inputDir, 'cases.json'), 'utf8'));
+const rendered = new Array(cases.length);
+for (let i = 0; i < cases.length; i++) {
+  rendered[i] = parse(cases[i].markdown);
 }
-
-mkdirSync('/output', { recursive: true });
-writeFileSync(OUTPUT, JSON.stringify(out));
+mkdirSync(outputDir, { recursive: true });
+writeFileSync(join(outputDir, 'html.json'), JSON.stringify(rendered));
